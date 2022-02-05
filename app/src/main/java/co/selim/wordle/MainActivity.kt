@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import co.selim.wordle.state.Tile
 import co.selim.wordle.state.UiState
 import co.selim.wordle.ui.theme.WordleTheme
 
@@ -74,6 +75,7 @@ private fun WordleContent(
                 }
             }
             Board(state)
+            Keyboard()
         }
     }
 }
@@ -106,20 +108,70 @@ private fun Board(state: UiState) {
     LazyVerticalGrid(cells = GridCells.Fixed(state.wordLength)) {
         state.tiles.forEach { tile ->
             item {
-                BoxWithConstraints(Modifier.fillMaxSize()) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .requiredHeight(maxWidth)
-                            .padding(2.dp)
-                            .background(Color.Gray, shape = RoundedCornerShape(10))
-                    ) {
-                        Text(text = tile.character.toString(), color = tile.color)
-                    }
-                }
+                Tile(tile)
             }
         }
+    }
+}
+
+@Composable
+private fun Tile(tile: Tile) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .requiredHeight(maxWidth)
+                .padding(2.dp)
+                .background(Color.Gray, shape = RoundedCornerShape(10))
+        ) {
+            Text(text = tile.character.toString(), color = tile.color)
+        }
+    }
+}
+
+@Composable
+private fun Keyboard() {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            "qwertyuiop".forEach {
+                Key(it)
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            "asdefghjkl".forEach {
+                Key(it)
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            "⏎zxcvbnm⌫ ".forEach {
+                Key(it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.Key(character: Char) {
+    val backgroundColor = if (character == ' ') Color.Transparent else Color.LightGray
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .weight(1f)
+            .aspectRatio(1f)
+            .padding(2.dp)
+            .background(backgroundColor, shape = RoundedCornerShape(10))
+    ) {
+        Text(text = character.toString())
     }
 }
 
