@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import co.selim.wordle.state.GameState
+import co.selim.wordle.state.UiState
 import co.selim.wordle.ui.theme.WordleTheme
 
 class MainActivity : ComponentActivity() {
@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun WordleContent(
-    state: GameState,
+    state: UiState,
     onValueChange: (String) -> Unit,
     submitWord: KeyboardActionScope.() -> Unit,
     restart: () -> Unit,
@@ -62,14 +62,13 @@ private fun WordleContent(
         color = MaterialTheme.colorScheme.background
     ) {
         Column(modifier = Modifier.padding(2.dp)) {
-            if (state is GameState.InProgress) {
-                TextField(state.input, onValueChange, submitWord)
-            } else {
-                if (state.word in state.guesses) {
-                    Text(text = "You won!")
-                } else {
-                    Text(text = "You suck!")
-                }
+            state.input?.let {
+                TextField(it, onValueChange, submitWord)
+            }
+            state.outcome?.let {
+                Text(text = it)
+            }
+            if (state.showRestartButton) {
                 Button(onClick = restart) {
                     Text(text = "Restart")
                 }
@@ -102,40 +101,9 @@ private fun TextField(
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
-private fun Board(state: GameState) {
-    data class Tile(
-        val character: Char,
-        val color: Color,
-    )
-
-    data class ViewState(val word: String, val tiles: List<Tile>)
-
-    val viewState = ViewState(
-        state.word.uppercase(),
-        state.guesses
-            .flatMap {
-                it.toCharArray().mapIndexed { i, c ->
-                    Tile(
-                        c.uppercaseChar(),
-                        if (state.word[i].equals(c, ignoreCase = true)) {
-                            Color.Green
-                        } else if (state.word.contains(c, ignoreCase = true)) {
-                            Color.Yellow
-                        } else {
-                            Color.Black
-                        }
-                    )
-                }
-            }
-                + buildList {
-            repeat((6 - state.guesses.size) * 5) {
-                add(Tile(' ', Color.Transparent))
-            }
-        }
-    )
-
+private fun Board(state: UiState) {
     LazyVerticalGrid(cells = GridCells.Fixed(5)) {
-        viewState.tiles.forEach { tile ->
+        state.tiles.forEach { tile ->
             item {
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     Box(
@@ -159,7 +127,7 @@ private fun Board(state: GameState) {
 private fun DefaultPreview() {
     WordleTheme {
         WordleContent(
-            state = GameState.InProgress("SNAKE", "seks", listOf("EKANS", "BLARF")),
+            state = UiState.GameOver("You are decent", emptyList()),
             onValueChange = {},
             submitWord = {},
             restart = {},
