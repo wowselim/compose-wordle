@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
 class WordleViewModel : ViewModel() {
-    private val _state = MutableStateFlow(
-        GameState("Snake", "", emptyList())
+    private val _state = MutableStateFlow<GameState>(
+        GameState.InProgress("", "SNAKE", emptyList())
     )
 
     val state: StateFlow<GameState> = _state
@@ -18,14 +18,47 @@ class WordleViewModel : ViewModel() {
             .uppercase()
             .take(5)
 
-        _state.update {
-            it.copy(input = sanitizedInput)
+        _state.update { currentState ->
+            when (currentState) {
+                is GameState.InProgress -> currentState.copy(input = sanitizedInput)
+                is GameState.Completed -> currentState
+            }
         }
     }
 
     fun submitWord() {
-        _state.update {
-            it.copy(guesses = it.guesses + it.input, input = "")
+        _state.update { currentState ->
+            when (currentState) {
+                is GameState.InProgress -> {
+                    val guesses = currentState.guesses + currentState.input
+                    when {
+                        currentState.input.length != 5 -> {
+                            // Invalid input length
+                            currentState
+                        }
+                        currentState.input == currentState.word -> {
+                            // Correct guess
+                            GameState.Completed(currentState.word, guesses)
+                        }
+                        guesses.size == 6 -> {
+                            // Out of guesses
+                            GameState.Completed(currentState.word, guesses)
+                        }
+                        else -> {
+                            // Incorrect guess
+                            currentState.copy(
+                                guesses = guesses,
+                                input = "",
+                            )
+                        }
+                    }
+                }
+                is GameState.Completed -> currentState
+            }
         }
+    }
+
+    fun restart() {
+        _state.value = GameState.InProgress("", "BARBS", emptyList())
     }
 }

@@ -12,8 +12,10 @@ import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActionScope
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,10 +23,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import co.selim.wordle.state.GameState
 import co.selim.wordle.ui.theme.WordleTheme
@@ -35,50 +37,72 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val state by viewModel.state.collectAsState()
             WordleTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val state by viewModel.state.collectAsState()
-                    Column(modifier = Modifier.padding(2.dp)) {
-                        BasicTextField(
-                            value = state.input,
-                            onValueChange = {
-                                viewModel.onInputChanged(it)
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = if (state.input.length == 5) ImeAction.Done else ImeAction.None),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    viewModel.submitWord()
-                                }
-                            ),
-                            modifier = Modifier
-                                .border(1.dp, Color.Black)
-                                .fillMaxWidth()
-                                .padding(4.dp),
-                        )
-                        Board(state)
-                    }
-                }
+                WordleContent(
+                    state = state,
+                    onValueChange = { viewModel.onInputChanged(it) },
+                    submitWord = { viewModel.submitWord() },
+                    restart = { viewModel.restart() },
+                )
             }
         }
     }
 }
 
 @Composable
-@OptIn(ExperimentalComposeUiApi::class)
-fun DefaultPreview(state: GameState, onInputChanged: (String) -> Unit) {
-    WordleTheme {
-
+private fun WordleContent(
+    state: GameState,
+    onValueChange: (String) -> Unit,
+    submitWord: KeyboardActionScope.() -> Unit,
+    restart: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(modifier = Modifier.padding(2.dp)) {
+            if (state is GameState.InProgress) {
+                TextField(state.input, onValueChange, submitWord)
+            } else {
+                if (state.word in state.guesses) {
+                    Text(text = "You won!")
+                } else {
+                    Text(text = "You suck!")
+                }
+                Button(onClick = restart) {
+                    Text(text = "Restart")
+                }
+            }
+            Board(state)
+        }
     }
 }
 
 @Composable
+private fun TextField(
+    input: String,
+    onValueChange: (String) -> Unit,
+    submitWord: KeyboardActionScope.() -> Unit
+) {
+    BasicTextField(
+        value = input,
+        onValueChange = onValueChange,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = if (input.length == 5) ImeAction.Done else ImeAction.None),
+        keyboardActions = KeyboardActions(
+            onDone = submitWord
+        ),
+        modifier = Modifier
+            .border(1.dp, Color.Black)
+            .fillMaxWidth()
+            .padding(4.dp),
+    )
+}
+
+@Composable
 @OptIn(ExperimentalFoundationApi::class)
-fun Board(state: GameState) {
+private fun Board(state: GameState) {
     data class Tile(
         val character: Char,
         val color: Color,
@@ -127,5 +151,18 @@ fun Board(state: GameState) {
                 }
             }
         }
+    }
+}
+
+@Composable
+@Preview
+private fun DefaultPreview() {
+    WordleTheme {
+        WordleContent(
+            state = GameState.InProgress("SNAKE", "seks", listOf("EKANS", "BLARF")),
+            onValueChange = {},
+            submitWord = {},
+            restart = {},
+        )
     }
 }
