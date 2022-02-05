@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import co.selim.wordle.state.Key
 import co.selim.wordle.state.Tile
 import co.selim.wordle.state.UiState
 import co.selim.wordle.ui.theme.WordleTheme
@@ -75,7 +76,7 @@ private fun WordleContent(
                 }
             }
             Board(state)
-            Keyboard()
+            Keyboard(state.keyboard)
         }
     }
 }
@@ -131,47 +132,32 @@ private fun Tile(tile: Tile) {
 }
 
 @Composable
-private fun Keyboard() {
+private fun Keyboard(keyboard: List<List<Key>>) {
     Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            "qwertyuiop".forEach {
-                Key(it)
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            "asdefghjkl".forEach {
-                Key(it)
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            "⏎zxcvbnm⌫ ".forEach {
-                Key(it)
+        keyboard.forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                row.forEach {
+                    Key(it)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun RowScope.Key(character: Char) {
-    val backgroundColor = if (character == ' ') Color.Transparent else Color.LightGray
+private fun RowScope.Key(key: Key) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .weight(1f)
             .aspectRatio(1f)
             .padding(2.dp)
-            .background(backgroundColor, shape = RoundedCornerShape(10))
+            .background(key.color, shape = RoundedCornerShape(10))
     ) {
-        Text(text = character.toString())
+        Text(text = key.character.toString())
     }
 }
 
@@ -180,7 +166,7 @@ private fun RowScope.Key(character: Char) {
 private fun DefaultPreview() {
     WordleTheme {
         WordleContent(
-            state = UiState.GameOver("You are decent", emptyList(), 5),
+            state = UiState.GameOver("You are decent", emptyList(), 5, emptyList()),
             onValueChange = {},
             submitWord = {},
             restart = {},

@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.selim.wordle.state.GameState
+import co.selim.wordle.state.Key
 import co.selim.wordle.state.Tile
 import co.selim.wordle.state.UiState
 import kotlinx.coroutines.flow.*
@@ -69,21 +70,57 @@ class WordleViewModel : ViewModel() {
     }
 
     fun restart() {
-        _state.value = GameState.InProgress("", "BARBS", emptyList(), maxGuesses = _state.value.maxGuesses)
+        _state.value =
+            GameState.InProgress("", "BARBS", emptyList(), maxGuesses = _state.value.maxGuesses)
     }
 }
 
 private fun GameState.toUiState(): UiState {
+    val keyboard = createKeyboard()
     return if (this is GameState.InProgress) {
-        UiState.InProgress(input, createTiles(), wordLength)
+        UiState.InProgress(input, createTiles(), wordLength, keyboard)
     } else {
         val outcome = if (word in guesses) {
             "You won!"
         } else {
             "You suck!"
         }
-        UiState.GameOver(outcome, createTiles(), wordLength)
+        UiState.GameOver(outcome, createTiles(), wordLength, keyboard)
     }
+}
+
+private fun GameState.createKeyboard(): List<List<Key>> {
+    return listOf(
+        "qwertyuiop".uppercase().map { it.toKey(word, guesses) },
+        "asdfghjkl ".uppercase().map { it.toKey(word, guesses) },
+        "⏎zxcvbnm⌫ ".uppercase().map { it.toKey(word, guesses) },
+    )
+}
+
+private fun Char.toKey(word: String, guesses: List<String>): Key {
+
+    val guessIndexes = guesses.flatMap { guess ->
+        guess.flatMapIndexed { index, c ->
+            if (c == this) {
+                listOf(index)
+            } else {
+                emptyList()
+            }
+        }
+    }
+
+    val green = guessIndexes.any { index ->
+        word[index] == this
+    }
+
+    val color = when {
+        this == ' ' -> Color.Transparent
+        green -> Color.Green
+        guesses.any { guess -> this in guess } && this in word -> Color.Yellow
+        guesses.any { guess -> this in guess } -> Color.DarkGray
+        else -> Color.LightGray
+    }
+    return Key(this, color, {})
 }
 
 private fun GameState.createTiles(): List<Tile> {
