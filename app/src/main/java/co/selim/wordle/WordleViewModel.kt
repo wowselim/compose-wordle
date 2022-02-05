@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.*
 
 class WordleViewModel : ViewModel() {
     private val _state = MutableStateFlow<GameState>(
-        GameState.InProgress("", "SNAKE", emptyList())
+        GameState.InProgress("", "TREE", emptyList(), maxGuesses = 5)
     )
 
     val state: StateFlow<UiState> = _state
@@ -26,7 +26,7 @@ class WordleViewModel : ViewModel() {
     fun onInputChanged(newInput: String) {
         val sanitizedInput = newInput.replace("[^a-zA-Z]".toRegex(), "")
             .uppercase()
-            .take(5)
+            .take(_state.value.wordLength)
 
         _state.update { currentState ->
             when (currentState) {
@@ -42,17 +42,17 @@ class WordleViewModel : ViewModel() {
                 is GameState.InProgress -> {
                     val guesses = currentState.guesses + currentState.input
                     when {
-                        currentState.input.length != 5 -> {
+                        currentState.input.length != currentState.wordLength -> {
                             // Invalid input length
                             currentState
                         }
                         currentState.input == currentState.word -> {
                             // Correct guess
-                            GameState.Completed(currentState.word, guesses)
+                            GameState.Completed(currentState.word, guesses, currentState.maxGuesses)
                         }
-                        guesses.size == 6 -> {
+                        guesses.size == currentState.maxGuesses -> {
                             // Out of guesses
-                            GameState.Completed(currentState.word, guesses)
+                            GameState.Completed(currentState.word, guesses, currentState.maxGuesses)
                         }
                         else -> {
                             // Incorrect guess
@@ -69,20 +69,20 @@ class WordleViewModel : ViewModel() {
     }
 
     fun restart() {
-        _state.value = GameState.InProgress("", "BARBS", emptyList())
+        _state.value = GameState.InProgress("", "BARBS", emptyList(), maxGuesses = _state.value.maxGuesses)
     }
 }
 
 private fun GameState.toUiState(): UiState {
     return if (this is GameState.InProgress) {
-        UiState.InProgress(input, createTiles())
+        UiState.InProgress(input, createTiles(), wordLength)
     } else {
         val outcome = if (word in guesses) {
             "You won!"
         } else {
             "You suck!"
         }
-        UiState.GameOver(outcome, createTiles())
+        UiState.GameOver(outcome, createTiles(), wordLength)
     }
 }
 
@@ -109,7 +109,7 @@ private fun GameState.createTiles(): List<Tile> {
             }
         }
     }
-    val remainingTileCount = (6 * 5) - guessTiles.size - inputTiles.size
+    val remainingTileCount = (maxGuesses * wordLength) - guessTiles.size - inputTiles.size
     val remainingTiles = buildList {
         repeat(remainingTileCount) {
             add(Tile(' ', Color.Transparent))

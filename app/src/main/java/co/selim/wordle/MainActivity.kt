@@ -63,7 +63,7 @@ private fun WordleContent(
     ) {
         Column(modifier = Modifier.padding(2.dp)) {
             state.input?.let {
-                TextField(it, onValueChange, submitWord)
+                TextField(it, state.wordLength, onValueChange, submitWord)
             }
             state.outcome?.let {
                 Text(text = it)
@@ -81,6 +81,7 @@ private fun WordleContent(
 @Composable
 private fun TextField(
     input: String,
+    maxInputLength: Int,
     onValueChange: (String) -> Unit,
     submitWord: KeyboardActionScope.() -> Unit
 ) {
@@ -88,7 +89,7 @@ private fun TextField(
         value = input,
         onValueChange = onValueChange,
         singleLine = true,
-        keyboardOptions = KeyboardOptions(imeAction = if (input.length == 5) ImeAction.Done else ImeAction.None),
+        keyboardOptions = KeyboardOptions(imeAction = if (input.length == maxInputLength) ImeAction.Done else ImeAction.None),
         keyboardActions = KeyboardActions(
             onDone = submitWord
         ),
@@ -102,7 +103,7 @@ private fun TextField(
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
 private fun Board(state: UiState) {
-    LazyVerticalGrid(cells = GridCells.Fixed(5)) {
+    LazyVerticalGrid(cells = GridCells.Fixed(state.wordLength)) {
         state.tiles.forEach { tile ->
             item {
                 BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -127,7 +128,7 @@ private fun Board(state: UiState) {
 private fun DefaultPreview() {
     WordleTheme {
         WordleContent(
-            state = UiState.GameOver("You are decent", emptyList()),
+            state = UiState.GameOver("You are decent", emptyList(), 5),
             onValueChange = {},
             submitWord = {},
             restart = {},

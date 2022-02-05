@@ -7,13 +7,18 @@ sealed interface UiState {
     val outcome: String?
     val showRestartButton: Boolean
     val tiles: List<Tile>
+    val wordLength: Int
 
-    data class InProgress(override val input: String, override val tiles: List<Tile>) : UiState {
+    data class InProgress(override val input: String, override val tiles: List<Tile>,
+                          override val wordLength: Int
+    ) : UiState {
         override val outcome: Nothing? = null
         override val showRestartButton = false
     }
 
-    data class GameOver(override val outcome: String, override val tiles: List<Tile>) : UiState {
+    data class GameOver(override val outcome: String, override val tiles: List<Tile>,
+                        override val wordLength: Int
+    ) : UiState {
         override val input: Nothing? = null
         override val showRestartButton = true
     }
