@@ -124,9 +124,9 @@ private fun RowScope.Key(key: Key) {
             .clickable(enabled = key.onClick != null) {
                 key.onClick?.invoke()
             }
-            .background(key.color, shape = RoundedCornerShape(10))
+            .background(key.backgroundColor, shape = RoundedCornerShape(10))
     ) {
-        Text(text = key.character.toString(), fontWeight = key.weight)
+        Text(text = key.character.toString(), color = key.foregroundColor, fontWeight = key.weight)
     }
 }
 

@@ -136,7 +136,7 @@ private fun Char.toKey(state: GameState, onKeyPressed: (Char) -> Unit): Key {
         state.word[index] == this
     }
 
-    val color = when {
+    val backgroundColor = when {
         this == ' ' -> Color.Transparent
         green -> Color.Green
         state.guesses.any { guess -> this in guess } && this in state.word -> Color.Yellow
@@ -152,8 +152,9 @@ private fun Char.toKey(state: GameState, onKeyPressed: (Char) -> Unit): Key {
         else -> !hasReachedMaxLength
     }
     val onClick = { onKeyPressed(this) }.takeIf { enabled && state is GameState.InProgress }
+    val foregroundColor = if (onClick != null) Color.Black else Color.Black.copy(alpha = 0.2f)
     val weight = if (this == '⏎') FontWeight.Bold else FontWeight.Normal
-    return Key(this, color, weight, onClick)
+    return Key(this, backgroundColor, foregroundColor, weight, onClick)
 }
 
 private fun GameState.createTiles(): List<Tile> {

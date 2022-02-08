@@ -36,7 +36,8 @@ data class Tile(
 
 data class Key(
     val character: Char,
-    val color: Color,
+    val backgroundColor: Color,
+    val foregroundColor: Color,
     val weight: FontWeight,
     val onClick: (() -> Unit)?,
 )
