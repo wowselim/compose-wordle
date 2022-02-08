@@ -1,18 +1,20 @@
 package co.selim.wordle
 
+import android.app.Application
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import co.selim.wordle.state.GameState
-import co.selim.wordle.state.Key
-import co.selim.wordle.state.Tile
-import co.selim.wordle.state.UiState
+import co.selim.wordle.state.*
+import co.selim.wordle.words.WordRepository
 import kotlinx.coroutines.flow.*
 
-class WordleViewModel : ViewModel() {
+class WordleViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repo = WordRepository(application)
+
     private val _state = MutableStateFlow<GameState>(
-        GameState.InProgress("", "TREE", emptyList(), maxGuesses = 5)
+        GameState.InProgress("", repo.getWord(-1), emptyList(), maxGuesses = 6)
     )
 
     val state: StateFlow<UiState> = _state
@@ -66,10 +68,6 @@ class WordleViewModel : ViewModel() {
                 is GameState.InProgress -> {
                     val guesses = currentState.guesses + currentState.input
                     when {
-                        currentState.input.length != currentState.wordLength -> {
-                            // Invalid input length
-                            currentState
-                        }
                         currentState.input == currentState.word -> {
                             // Correct guess
                             GameState.Completed(currentState.word, guesses, currentState.maxGuesses)
@@ -77,6 +75,10 @@ class WordleViewModel : ViewModel() {
                         guesses.size == currentState.maxGuesses -> {
                             // Out of guesses
                             GameState.Completed(currentState.word, guesses, currentState.maxGuesses)
+                        }
+                        !repo.isValid(currentState.input) -> {
+                            // Invalid input word
+                            currentState
                         }
                         else -> {
                             // Incorrect guess
@@ -93,8 +95,7 @@ class WordleViewModel : ViewModel() {
     }
 
     fun restart() {
-        _state.value =
-            GameState.InProgress("", "BARBS", emptyList(), maxGuesses = _state.value.maxGuesses)
+        _state.update { it.restart(repo.getWord(-1)) }
     }
 }
 

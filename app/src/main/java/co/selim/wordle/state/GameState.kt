@@ -19,3 +19,6 @@ sealed interface GameState {
         override val maxGuesses: Int,
     ) : GameState
 }
+
+fun GameState.restart(word: String, maxGuesses: Int = this.maxGuesses): GameState.InProgress =
+    GameState.InProgress("", word, emptyList(), maxGuesses = maxGuesses)
