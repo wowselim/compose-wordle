@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
@@ -155,6 +156,9 @@ private fun RowScope.Key(key: Key) {
             .weight(1f)
             .aspectRatio(1f)
             .padding(2.dp)
+            .clickable(enabled = key.onClick != null) {
+                key.onClick?.invoke()
+            }
             .background(key.color, shape = RoundedCornerShape(10))
     ) {
         Text(text = key.character.toString())

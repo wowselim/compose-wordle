@@ -16,13 +16,48 @@ class WordleViewModel : ViewModel() {
 
     val state: StateFlow<UiState> = _state
         .map { gameState ->
-            gameState.toUiState()
+            gameState.toUiState(::onKeyPressed)
         }
         .stateIn(
             viewModelScope,
             started = SharingStarted.Eagerly,
-            initialValue = _state.value.toUiState()
+            initialValue = _state.value.toUiState(::onKeyPressed)
         )
+
+    private fun onKeyPressed(key: Char) {
+        when (key) {
+            '⏎' -> submitWord()
+            '⌫' -> onBackspace()
+            else -> onLetterPressed(key)
+        }
+    }
+
+    private fun onLetterPressed(key: Char) {
+        _state.update { currentState ->
+            when (currentState) {
+                is GameState.InProgress -> {
+                    val newInput = currentState.input + key
+                    val sanitizedInput = newInput.replace("[^a-zA-Z]".toRegex(), "")
+                        .uppercase()
+                        .take(_state.value.wordLength)
+                    currentState.copy(input = sanitizedInput)
+                }
+                is GameState.Completed -> currentState
+            }
+        }
+    }
+
+    private fun onBackspace() {
+        _state.update { currentState ->
+            when (currentState) {
+                is GameState.InProgress -> {
+                    val newInput = currentState.input.dropLast(1)
+                    currentState.copy(input = newInput)
+                }
+                is GameState.Completed -> currentState
+            }
+        }
+    }
 
     fun onInputChanged(newInput: String) {
         val sanitizedInput = newInput.replace("[^a-zA-Z]".toRegex(), "")
@@ -75,8 +110,8 @@ class WordleViewModel : ViewModel() {
     }
 }
 
-private fun GameState.toUiState(): UiState {
-    val keyboard = createKeyboard()
+private fun GameState.toUiState(onKeyPressed: (Char) -> Unit): UiState {
+    val keyboard = createKeyboard(onKeyPressed)
     return if (this is GameState.InProgress) {
         UiState.InProgress(input, createTiles(), wordLength, keyboard)
     } else {
@@ -89,17 +124,17 @@ private fun GameState.toUiState(): UiState {
     }
 }
 
-private fun GameState.createKeyboard(): List<List<Key>> {
+private fun GameState.createKeyboard(onKeyPressed: (Char) -> Unit): List<List<Key>> {
     return listOf(
-        "qwertyuiop".uppercase().map { it.toKey(word, guesses) },
-        "asdfghjkl ".uppercase().map { it.toKey(word, guesses) },
-        "⏎zxcvbnm⌫ ".uppercase().map { it.toKey(word, guesses) },
+        "qwertyuiop".uppercase().map { it.toKey(this, onKeyPressed) },
+        "asdfghjkl ".uppercase().map { it.toKey(this, onKeyPressed) },
+        "⏎zxcvbnm⌫ ".uppercase().map { it.toKey(this, onKeyPressed) },
     )
 }
 
-private fun Char.toKey(word: String, guesses: List<String>): Key {
+private fun Char.toKey(state: GameState, onKeyPressed: (Char) -> Unit): Key {
 
-    val guessIndexes = guesses.flatMap { guess ->
+    val guessIndexes = state.guesses.flatMap { guess ->
         guess.flatMapIndexed { index, c ->
             if (c == this) {
                 listOf(index)
@@ -110,17 +145,26 @@ private fun Char.toKey(word: String, guesses: List<String>): Key {
     }
 
     val green = guessIndexes.any { index ->
-        word[index] == this
+        state.word[index] == this
     }
 
     val color = when {
         this == ' ' -> Color.Transparent
         green -> Color.Green
-        guesses.any { guess -> this in guess } && this in word -> Color.Yellow
-        guesses.any { guess -> this in guess } -> Color.DarkGray
+        state.guesses.any { guess -> this in guess } && this in state.word -> Color.Yellow
+        state.guesses.any { guess -> this in guess } -> Color.DarkGray
         else -> Color.LightGray
     }
-    return Key(this, color, {})
+    val hasReachedMaxLength = (state as? GameState.InProgress)?.input?.length == state.wordLength
+    val isBlank = (state as? GameState.InProgress)?.input?.length == 0
+    val enabled = when (this) {
+        ' ' -> false
+        '⏎' -> hasReachedMaxLength
+        '⌫' -> !isBlank
+        else -> !hasReachedMaxLength
+    }
+    val onClick = { onKeyPressed(this) }.takeIf { enabled && state is GameState.InProgress }
+    return Key(this, color, onClick)
 }
 
 private fun GameState.createTiles(): List<Tile> {
