@@ -6,16 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActionScope
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import co.selim.wordle.state.Key
@@ -44,8 +38,6 @@ class MainActivity : ComponentActivity() {
             WordleTheme {
                 WordleContent(
                     state = state,
-                    onValueChange = { viewModel.onInputChanged(it) },
-                    submitWord = { viewModel.submitWord() },
                     restart = { viewModel.restart() },
                 )
             }
@@ -56,8 +48,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun WordleContent(
     state: UiState,
-    onValueChange: (String) -> Unit,
-    submitWord: KeyboardActionScope.() -> Unit,
     restart: () -> Unit,
 ) {
     Surface(
@@ -65,9 +55,6 @@ private fun WordleContent(
         color = MaterialTheme.colorScheme.background
     ) {
         Column(modifier = Modifier.padding(2.dp)) {
-            state.input?.let {
-                TextField(it, state.wordLength, onValueChange, submitWord)
-            }
             state.outcome?.let {
                 Text(text = it)
             }
@@ -80,28 +67,6 @@ private fun WordleContent(
             Keyboard(state.keyboard)
         }
     }
-}
-
-@Composable
-private fun TextField(
-    input: String,
-    maxInputLength: Int,
-    onValueChange: (String) -> Unit,
-    submitWord: KeyboardActionScope.() -> Unit
-) {
-    BasicTextField(
-        value = input,
-        onValueChange = onValueChange,
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(imeAction = if (input.length == maxInputLength) ImeAction.Done else ImeAction.None),
-        keyboardActions = KeyboardActions(
-            onDone = submitWord
-        ),
-        modifier = Modifier
-            .border(1.dp, Color.Black)
-            .fillMaxWidth()
-            .padding(4.dp),
-    )
 }
 
 @Composable
@@ -171,8 +136,6 @@ private fun DefaultPreview() {
     WordleTheme {
         WordleContent(
             state = UiState.GameOver("You are decent", emptyList(), 5, emptyList()),
-            onValueChange = {},
-            submitWord = {},
             restart = {},
         )
     }

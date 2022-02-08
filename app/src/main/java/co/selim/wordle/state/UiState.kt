@@ -3,7 +3,6 @@ package co.selim.wordle.state
 import androidx.compose.ui.graphics.Color
 
 sealed interface UiState {
-    val input: String?
     val outcome: String?
     val showRestartButton: Boolean
     val tiles: List<Tile>
@@ -11,7 +10,6 @@ sealed interface UiState {
     val keyboard: List<List<Key>>
 
     data class InProgress(
-        override val input: String,
         override val tiles: List<Tile>,
         override val wordLength: Int,
         override val keyboard: List<List<Key>>
@@ -26,7 +24,6 @@ sealed interface UiState {
         override val wordLength: Int,
         override val keyboard: List<List<Key>>
     ) : UiState {
-        override val input: Nothing? = null
         override val showRestartButton = true
     }
 }

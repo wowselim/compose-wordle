@@ -59,20 +59,7 @@ class WordleViewModel : ViewModel() {
         }
     }
 
-    fun onInputChanged(newInput: String) {
-        val sanitizedInput = newInput.replace("[^a-zA-Z]".toRegex(), "")
-            .uppercase()
-            .take(_state.value.wordLength)
-
-        _state.update { currentState ->
-            when (currentState) {
-                is GameState.InProgress -> currentState.copy(input = sanitizedInput)
-                is GameState.Completed -> currentState
-            }
-        }
-    }
-
-    fun submitWord() {
+    private fun submitWord() {
         _state.update { currentState ->
             when (currentState) {
                 is GameState.InProgress -> {
@@ -113,7 +100,7 @@ class WordleViewModel : ViewModel() {
 private fun GameState.toUiState(onKeyPressed: (Char) -> Unit): UiState {
     val keyboard = createKeyboard(onKeyPressed)
     return if (this is GameState.InProgress) {
-        UiState.InProgress(input, createTiles(), wordLength, keyboard)
+        UiState.InProgress(createTiles(), wordLength, keyboard)
     } else {
         val outcome = if (word in guesses) {
             "You won!"
