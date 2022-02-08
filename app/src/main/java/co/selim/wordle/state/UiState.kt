@@ -1,6 +1,7 @@
 package co.selim.wordle.state
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 
 sealed interface UiState {
     val outcome: String?
@@ -36,5 +37,6 @@ data class Tile(
 data class Key(
     val character: Char,
     val color: Color,
+    val weight: FontWeight,
     val onClick: (() -> Unit)?,
 )

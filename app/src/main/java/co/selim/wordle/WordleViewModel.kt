@@ -1,6 +1,7 @@
 package co.selim.wordle
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.selim.wordle.state.GameState
@@ -151,7 +152,8 @@ private fun Char.toKey(state: GameState, onKeyPressed: (Char) -> Unit): Key {
         else -> !hasReachedMaxLength
     }
     val onClick = { onKeyPressed(this) }.takeIf { enabled && state is GameState.InProgress }
-    return Key(this, color, onClick)
+    val weight = if (this == '⏎') FontWeight.Bold else FontWeight.Normal
+    return Key(this, color, weight, onClick)
 }
 
 private fun GameState.createTiles(): List<Tile> {

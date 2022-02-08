@@ -126,7 +126,7 @@ private fun RowScope.Key(key: Key) {
             }
             .background(key.color, shape = RoundedCornerShape(10))
     ) {
-        Text(text = key.character.toString())
+        Text(text = key.character.toString(), fontWeight = key.weight)
     }
 }
 
