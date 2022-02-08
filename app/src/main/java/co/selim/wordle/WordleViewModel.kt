@@ -95,7 +95,7 @@ class WordleViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun restart() {
-        _state.update { it.restart(repo.getWord(-1)) }
+        _state.update { it.restart(repo.getWord(-1), maxGuesses = it.maxGuesses - 1) }
     }
 }
 
@@ -107,7 +107,7 @@ private fun GameState.toUiState(onKeyPressed: (Char) -> Unit): UiState {
         val outcome = if (word in guesses) {
             "You won!"
         } else {
-            "You suck!"
+            "You suck! The word was $word."
         }
         UiState.GameOver(outcome, createTiles(), wordLength, keyboard)
     }
@@ -115,11 +115,16 @@ private fun GameState.toUiState(onKeyPressed: (Char) -> Unit): UiState {
 
 private fun GameState.createKeyboard(onKeyPressed: (Char) -> Unit): List<List<Key>> {
     return listOf(
-        "qwertyuiop".uppercase().map { it.toKey(this, onKeyPressed) },
-        "asdfghjkl ".uppercase().map { it.toKey(this, onKeyPressed) },
-        "⏎zxcvbnm⌫ ".uppercase().map { it.toKey(this, onKeyPressed) },
+        toKeys("qwertyuiop", onKeyPressed),
+        toKeys("asdfghjkl ", onKeyPressed),
+        toKeys("⏎zxcvbnm⌫ ", onKeyPressed),
     )
 }
+
+private fun GameState.toKeys(
+    s: String,
+    onKeyPressed: (Char) -> Unit
+) = s.uppercase().map { it.toKey(this, onKeyPressed) }
 
 private fun Char.toKey(state: GameState, onKeyPressed: (Char) -> Unit): Key {
 
