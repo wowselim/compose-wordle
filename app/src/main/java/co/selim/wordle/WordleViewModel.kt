@@ -8,14 +8,27 @@ import androidx.lifecycle.viewModelScope
 import co.selim.wordle.state.*
 import co.selim.wordle.words.WordRepository
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 class WordleViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repo = WordRepository(application)
 
     private val _state = MutableStateFlow<GameState>(
-        GameState.InProgress("", repo.getWord(-1), emptyList(), maxGuesses = 6)
+        // TODO Don't put in a fake word!
+        GameState.InProgress("", "12345", emptyList(), maxGuesses = 6)
     )
+
+    init {
+        viewModelScope.launch {
+            _state.update { state ->
+                when (state) {
+                    is GameState.InProgress -> state.copy(word = repo.getWord(-1))
+                    is GameState.Completed -> state
+                }
+            }
+        }
+    }
 
     val state: StateFlow<UiState> = _state
         .map { gameState ->
@@ -28,10 +41,13 @@ class WordleViewModel(application: Application) : AndroidViewModel(application) 
         )
 
     private fun onKeyPressed(key: Char) {
-        when (key) {
-            '⏎' -> submitWord()
-            '⌫' -> onBackspace()
-            else -> onLetterPressed(key)
+        // TODO Queue key presses in a flow
+        viewModelScope.launch {
+            when (key) {
+                '⏎' -> submitWord()
+                '⌫' -> onBackspace()
+                else -> onLetterPressed(key)
+            }
         }
     }
 
@@ -62,7 +78,7 @@ class WordleViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    private fun submitWord() {
+    private suspend fun submitWord() {
         _state.update { currentState ->
             when (currentState) {
                 is GameState.InProgress -> {
@@ -95,7 +111,9 @@ class WordleViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun restart() {
-        _state.update { it.restart(repo.getWord(-1), maxGuesses = it.maxGuesses - 1) }
+        viewModelScope.launch {
+            _state.update { it.restart(repo.getWord(-1), maxGuesses = it.maxGuesses - 1) }
+        }
     }
 }
 
